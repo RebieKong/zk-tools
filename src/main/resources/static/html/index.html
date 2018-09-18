@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ZK-PLAYGROUND</title>
+    <link href="https://cdn.bootcss.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+    <link href="https://cdn.bootcss.com/bootstrap-treeview/1.2.0/bootstrap-treeview.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/bootstrap-treeview/1.2.0/bootstrap-treeview.min.js"></script>
+</head>
+<body>
+<div class="row">
+    <div class="col-md-8" style="overflow:scroll;height: 100%">
+        <div id="tree"></div>
+    </div>
+    <div class="col-md-4">
+        <div class="panel panel-default">
+            <div class="panel-heading" onclick="triggerServerInfo()">
+                <h3 class="panel-title">Server Info(Click To Toggle)</h3>
+            </div>
+            <div class="panel-body">
+                <div id="server-info">
+                    <form>
+                        <div class="form-group">
+                            <label for="servers">Servers</label>
+                            <input type="text" class="form-control" id="servers" placeholder="127.0.0.1:2181">
+                        </div>
+                        <div class="form-group">
+                            <label for="user-name">Password</label>
+                            <input type="text" class="form-control" id="user-name" placeholder="Username(nullable)">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" placeholder="Password(nullable)">
+                        </div>
+                    </form>
+                    <button onclick="loadData()" class="btn btn-default">Fetch</button>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Path</h3>
+            </div>
+            <div id="path" class="panel-body">
+
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Last Modify Time</h3>
+            </div>
+            <div id="last-modify-time" class="panel-body">
+
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">ACL</h3>
+            </div>
+            <div id="acl" class="panel-body">
+
+
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Data</h3>
+            </div>
+            <div id="data" class="panel-body">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script>
+    var height = $(document.body).height();
+
+    function loadData() {
+        $("#server-info").hide();
+        $.ajax(
+            {
+                url: "/list",
+                dataType: "json",
+                data: {
+                    ips: $("#servers").val(),
+                    user_name: $("#user_name").val(),
+                    password: $("#password").val()
+                },
+                success: function (data) {
+                    $('#tree').treeview({
+                        data: [data],
+                        onNodeSelected: function (event, data) {
+                            $.ajax(
+                                {
+                                    url: "/detail",
+                                    dataType: "json",
+                                    data: {
+                                        path: data.path,
+                                        ips: $("#servers").val(),
+                                        user_name: $("#user_name").val(),
+                                        password: $("#password").val()
+                                    },
+                                    success: function (data) {
+                                        $("#path").html(data.path);
+                                        $("#last-modify-time").html(data.lastModifyTime);
+                                        $("#data").html(data.data);
+
+                                        var table = "<table class=\"table\"><tr><td>scheme</td><td>id</td><td>perms</td></tr>";
+                                        for (var i = 0; i < data.acl.length; i++) {
+                                            table += "<tr>";
+                                            table += "<td>" + data.acl[i].scheme + "</td>";
+                                            table += "<td>" + data.acl[i].id + "</td>";
+                                            table += "<td>" + data.acl[i].perms + "</td>";
+                                            table += "</tr>";
+                                        }
+                                        table += "</table>";
+                                        $("#acl").html(table);
+                                    }
+                                }
+                            );
+                        },
+                        onNodeCollapsed: function () {
+                            $("#tree").css("height", height)
+                        },
+                        onNodeExpanded: function () {
+                            $("#tree").css("height", height)
+                        }
+                    });
+                }
+            }
+        );
+    }
+
+    function triggerServerInfo() {
+        $("#server-info").toggle()
+    }
+
+    $('#tree').treeview({
+        data: []
+    });
+</script>
+</html>
