@@ -26,7 +26,12 @@ public class Znode {
     public static Znode createNodeByPath(String path, ZooKeeper zk) {
         Znode znode = new Znode();
         znode.path = path;
-        znode.text = path;
+        if (!path.equals("/")) {
+            String[] c = path.split("/");
+            znode.text = c[c.length - 1];
+        } else {
+            znode.text = path;
+        }
         List<Znode> n = createChildrenNode(znode, zk);
         if (n.size() > 0) {
             znode.nodes = n;
